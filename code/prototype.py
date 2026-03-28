@@ -1,8 +1,8 @@
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QLayout, 
-    QVBoxLayout, QHBoxLayout, QGridLayout,
-    QLabel, QPlainTextEdit,
-    QPushButton, QDialog, QMessageBox);
+    QVBoxLayout, QHBoxLayout, QGridLayout, QFormLayout, QGroupBox,
+    QLabel, QPlainTextEdit, QTableView,
+    QPushButton, QDialog, QMessageBox, QProgressBar);
 from PyQt6.QtCore import QTimer;
 import pyqtgraph; #library responsible for all the plotting
 
@@ -20,7 +20,7 @@ class MainWindow(QMainWindow):
         #stores if the navigation window has been opened, we don't want copies of the same window
         self.navigation = None;
         self.logs = None; 
-        
+        self.componentOverview_window = None;
         
         operation_status_label = QLabel(text="Status: Operationable");
         fire_interlock_label = QLabel(text="Fire Suppression: Ready");
@@ -41,13 +41,18 @@ class MainWindow(QMainWindow):
         navigation_open_button.setText("Open Navigation Info");
         navigation_open_button.clicked.connect(self.navigation_open);
         logs_open_button = QPushButton();
-        navigation_open_button.setText("Open Logs");
-        navigation_open_button.clicked.connect(self.logs_window_open);
+        logs_open_button.setText("Open Logs");
+        logs_open_button.clicked.connect(self.logs_window_open);
+        componentOverview_open_button = QPushButton();
+        componentOverview_open_button.setText("Open Component Overview");
+        componentOverview_open_button.clicked.connect(self.componentOverview_open);
         
-        #widget coordinates are provided in (y, x) in a x * y grid
+        #widget coordinates are provided in (x, y) in a x * y grid
         #TODO: fix label layout
         overview_layout.addWidget(logs_textbox, 1, 0);
         overview_layout.addWidget(navigation_open_button, 2, 0);
+        overview_layout.addWidget(componentOverview_open_button, 3, 0);
+        overview_layout.addWidget(logs_open_button, 4, 0);
         overview_layout.addWidget(operation_status_label, 0, 1);
         overview_layout.addWidget(fire_interlock_label, 1, 1);
         overview_layout.addWidget(doors_interlock_label, 2, 1);
@@ -77,6 +82,12 @@ class MainWindow(QMainWindow):
         if self.logs is None:
             self.logs = NavigationWindow();
         self.logs.show();
+        
+    def componentOverview_open(self):
+        #opens the navigation window if it already hasn't been opened
+        if self.componentOverview_window is None:
+            self.componentOverview_window = ComponentOverviewWindow();
+        self.componentOverview_window.show();
                 
 
 #Window that shows all the navigation info of the TBM
@@ -115,6 +126,71 @@ class NavigationWindow(QWidget):
 class LogsWindow(QWidget):
     def __init__(self):
         super().__init__();
+
+
+class ComponentOverviewWindow(QWidget):
+    def __init__(self):
+        super().__init__();
+        
+        self.setWindowTitle("Component Overview");
+        
+        component_overview_layout = QGridLayout();
+        circuits_monitoring_layout = QGridLayout();
+        power_metrics_layout = QFormLayout();
+        
+        self.setLayout(component_overview_layout);
+        
+        circuits_monitoring_groupbox = QGroupBox(title="Circuits Monitoring");
+        power_metrics_groupbox = QGroupBox(title="Power Metrics");
+        circuits_monitoring_groupbox.setLayout(circuits_monitoring_layout);
+        power_metrics_groupbox.setLayout(power_metrics_layout);
+        
+        component_overview_layout.addWidget(circuits_monitoring_groupbox, 0, 0);
+        component_overview_layout.addWidget(power_metrics_groupbox, 0, 1);
+        
+        control_circuit_label = QLabel("Circuit \nVoltage: 12V");
+        power_circuit_label = QLabel("Circuit \nVoltage: 12V");
+        lighting_circuit_label = QLabel("Circuit \nVoltage: 12V");
+        sensor_circuit_label = QLabel("Circuit \nVoltage: 12V");
+        actuator_circuit_label = QLabel("Circuit \nVoltage: 12V");
+        communication_circuit_label = QLabel("Circuit \nVoltage: 12V");
+        
+        circuits_monitoring_layout.addWidget(control_circuit_label, 0, 0);
+        circuits_monitoring_layout.addWidget(power_circuit_label, 0, 1);
+        circuits_monitoring_layout.addWidget(lighting_circuit_label, 0, 2);
+        circuits_monitoring_layout.addWidget(sensor_circuit_label, 1, 0);
+        circuits_monitoring_layout.addWidget(actuator_circuit_label, 1, 1);
+        circuits_monitoring_layout.addWidget(communication_circuit_label, 1, 2);
+        
+        supply_voltage_label = QLabel("Supply Voltage:");
+        supply_current_label = QLabel("Supply Current:");
+        power_draw_label = QLabel("Power Draw:");
+        supply_voltage_indicator = QProgressBar();
+        supply_voltage_indicator.setMaximum(15);
+        supply_voltage_indicator.setValue(7);
+        supply_voltage_indicator.setFormat("%v V");
+        supply_current_indicator = QProgressBar();
+        supply_current_indicator.setMaximum(20);
+        supply_current_indicator.setValue(10);
+        supply_current_indicator.setFormat("%v A");
+        power_draw_indicator = QProgressBar();
+        power_draw_indicator.setMaximum(20);
+        power_draw_indicator.setValue(10);
+        power_draw_indicator.setFormat("%v W");
+        
+        power_metrics_layout.addRow(supply_voltage_label, supply_voltage_indicator);
+        power_metrics_layout.addRow(supply_current_label, supply_current_indicator);
+        power_metrics_layout.addRow(power_draw_label, power_draw_indicator);
+        
+        #TODO: Add a TableView for component viewing
+        view_components_button = QPushButton();
+        
+        
+        
+        
+        
+        
+        
         
                 
 manager_application = QApplication([]);
