@@ -1,8 +1,10 @@
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QLayout, 
     QVBoxLayout, QHBoxLayout, QGridLayout, QFormLayout, QGroupBox,
-    QLabel, QPlainTextEdit, QTableView,
-    QPushButton, QDialog, QMessageBox, QProgressBar);
+    QLabel, QPlainTextEdit, QProgressBar,
+    QTableWidget, QTableWidgetItem, 
+    QPushButton, QComboBox,
+    QDialog, QMessageBox, );
 from PyQt6.QtCore import QTimer;
 import pyqtgraph; #library responsible for all the plotting
 
@@ -135,8 +137,13 @@ class ComponentOverviewWindow(QWidget):
         self.setWindowTitle("Component Overview");
         
         component_overview_layout = QGridLayout();
+        top_half_layout = QHBoxLayout();
+        communications_layout = QHBoxLayout();
         circuits_monitoring_layout = QGridLayout();
         power_metrics_layout = QFormLayout();
+        
+        component_overview_layout.addLayout(top_half_layout, 0, 0);
+        component_overview_layout.addLayout(communications_layout, 3, 0)
         
         self.setLayout(component_overview_layout);
         
@@ -145,8 +152,11 @@ class ComponentOverviewWindow(QWidget):
         circuits_monitoring_groupbox.setLayout(circuits_monitoring_layout);
         power_metrics_groupbox.setLayout(power_metrics_layout);
         
-        component_overview_layout.addWidget(circuits_monitoring_groupbox, 0, 0);
-        component_overview_layout.addWidget(power_metrics_groupbox, 0, 1);
+        top_half_layout.addWidget(circuits_monitoring_groupbox);
+        top_half_layout.addWidget(power_metrics_groupbox);
+        
+        #component_overview_layout.addWidget(circuits_monitoring_groupbox, 0, 0);
+        #component_overview_layout.addWidget(power_metrics_groupbox, 0, 1);
         
         control_circuit_label = QLabel("Circuit \nVoltage: 12V");
         power_circuit_label = QLabel("Circuit \nVoltage: 12V");
@@ -182,8 +192,59 @@ class ComponentOverviewWindow(QWidget):
         power_metrics_layout.addRow(supply_current_label, supply_current_indicator);
         power_metrics_layout.addRow(power_draw_label, power_draw_indicator);
         
-        #TODO: Add a TableView for component viewing
-        view_components_button = QPushButton();
+        component_selector_combobox = QComboBox();
+        component_overview_layout.addWidget(component_selector_combobox, 1, 0);
+        component_selector_combobox.addItems(["Circuit 1", "Sensor 1"]);
+        
+        component_viewer_table = QTableWidget();
+        component_viewer_table.setRowCount(2);
+        component_viewer_table.setColumnCount(2);
+        component_overview_layout.addWidget(component_viewer_table, 2, 0);
+        
+        component_viewer_table.setItem(0, 0, QTableWidgetItem("Test 1"));
+        component_viewer_table.setItem(0, 1, QTableWidgetItem("Test 2"));
+        component_viewer_table.setItem(1, 0, QTableWidgetItem("Test 3"));
+        component_viewer_table.setItem(1, 1, QTableWidgetItem("Test 4"));
+        
+        component_viewer_table.show();
+        
+        sensors_link_button = QPushButton(text = "Sensors Link");
+        controllers_link_button = QPushButton(text = "Controllers Link");
+        communications_layout.addWidget(sensors_link_button);
+        communications_layout.addWidget(controllers_link_button);
+        
+        sensors_link_button.clicked.connect(self.showLinkDialog);
+        controllers_link_button.clicked.connect(self.showLinkDialog);
+    
+    def showLinkDialog(self):
+        self.linkDialog = CommunicationLinksDialog();
+        self.linkDialog.show();    
+        
+        
+class CommunicationLinksDialog(QDialog):
+    def __init__(self):
+        super().__init__();
+        self.setWindowTitle("Link Viewer");
+
+        link_dialog_layout = QVBoxLayout();
+        self.setLayout(link_dialog_layout);
+
+        # Create table
+        link_table = QTableWidget(2, 2);
+        link_table.setHorizontalHeaderLabels(["Component Name", "Detail"]);
+
+        # Add data
+        test_tabledata = [("Sensor 1", "Electrical"), ("Sensor 2", "Mechanical")];
+        for row, (name, detail) in enumerate(test_tabledata):
+            link_table.setItem(row, 0, QTableWidgetItem(name));
+            link_table.setItem(row, 1, QTableWidgetItem(detail));
+            
+        link_table.show();
+        link_dialog_layout.addWidget(link_table);
+        
+        
+        
+        
         
         
         
