@@ -1,11 +1,12 @@
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QLayout, 
     QVBoxLayout, QHBoxLayout, QGridLayout, QFormLayout, QGroupBox,
-    QLabel, QPlainTextEdit, QProgressBar,
+    QLabel, QPlainTextEdit, QLineEdit, QProgressBar,
     QTableWidget, QTableWidgetItem, 
     QPushButton, QComboBox,
     QDialog, QMessageBox, );
 from PyQt6.QtCore import QTimer;
+from PyQt6.QtGui import QSyntaxHighlighter, QColor, QTextCharFormat;
 import pyqtgraph; #library responsible for all the plotting
 
    
@@ -82,7 +83,7 @@ class MainWindow(QMainWindow):
     def logs_window_open(self):
         #opens the navigation window if it already hasn't been opened
         if self.logs is None:
-            self.logs = NavigationWindow();
+            self.logs = LogsWindow();
         self.logs.show();
         
     def componentOverview_open(self):
@@ -93,26 +94,31 @@ class MainWindow(QMainWindow):
                 
 
 #Window that shows all the navigation info of the TBM
+#TODO: Complete navigation window.
 class NavigationWindow(QWidget):
     def __init__(self):
         super().__init__();
+        
+        self.setWindowTitle("Navigation Diagnostics");
         
         #TODO: Get test 2D plotting working
         self.test_x = [0, 1, 2, 3, 4, 5, 6];
         self.test_y = [7, 8, 9, 10, 11, 12, 13];
         
         navigation_layout = QGridLayout();
+        self.setLayout(navigation_layout);
         
         navigation_status_label = QLabel("Navigation Status: Halted");  
         
         navigation_plot = pyqtgraph.PlotWidget();
         navigation_plot.setBackground("w");
         
-        #navigation_layout.addWidget(navigation_plot, 0, 0);
-        #navigation_layout.addWidget(navigation_status_label, 1, 0);
+        navigation_layout.addWidget(navigation_plot, 0, 0);
+        navigation_layout.addWidget(navigation_status_label, 1, 0);
         
         self.navigation_graph = navigation_plot.plot(self.test_x, self.test_y, pen=pyqtgraph.mkPen(255,0,0));
         
+        #TODO: Get dynamic plotting working.
         #self.update_timer = QTimer();
         #self.update_timer.setInterval(600);
         #self.update_timer.timeout.connect(self.update_plot);
@@ -124,10 +130,49 @@ class NavigationWindow(QWidget):
     #    self.test_y.append(self.test_x.__len__() + 4);
     #    self.navigation_graph.setData(self.test_x, self.test_y);
 
-#TODO: Complete logs.
+
 class LogsWindow(QWidget):
     def __init__(self):
         super().__init__();
+        
+        self.setWindowTitle("Logs Viewer");
+        
+        logs_layout = QGridLayout();
+        self.setLayout(logs_layout);
+        logs_controls_layout = QHBoxLayout();
+        logs_layout.addLayout(logs_controls_layout, 0, 0);
+        
+        logs_textbox = QPlainTextEdit(); #PlainTextEdit is best for efficient updating for chunks of text like logs
+        logs_textbox.setReadOnly(True);
+        logs_layout.addWidget(logs_textbox, 1, 0);
+        
+        #TODO: Add widgets to a collection and enumerate to add widgets
+        search_label = QLabel("Search: ");
+        search_lineEdit = QLineEdit();
+        filter_combobox = QComboBox();
+        logs_controls_layout.addWidget(search_label);
+        logs_controls_layout.addWidget(search_lineEdit);
+        logs_controls_layout.addWidget(filter_combobox);
+        
+        logs_textbox.appendPlainText("ERROR \n Test");
+        
+        
+#TODO: Figure out text highlighting.
+class QLogsHighlighter(QSyntaxHighlighter):
+    def __init__(self, document):
+        super().__init__(document);
+        
+    def highlightBlock(self, text):
+        if "ERROR" in text:
+            fmt = QTextCharFormat()
+            fmt.setBackground(QColor("red"))
+            self.setFormat(0, len(text), fmt)       
+        else:
+            fmt = QTextCharFormat()
+            fmt.setBackground(QColor("yellow"))
+            self.setFormat(0, len(text), fmt)
+        
+        
 
 
 class ComponentOverviewWindow(QWidget):
@@ -240,19 +285,7 @@ class CommunicationLinksDialog(QDialog):
             link_table.setItem(row, 1, QTableWidgetItem(detail));
             
         link_table.show();
-        link_dialog_layout.addWidget(link_table);
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+        link_dialog_layout.addWidget(link_table);        
                 
 manager_application = QApplication([]);
 main_window = MainWindow();
