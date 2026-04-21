@@ -129,8 +129,25 @@ class NavigationWindow(QWidget):
     #    self.test_x.append(self.test_x.__len__() + 1);
     #    self.test_y.append(self.test_x.__len__() + 4);
     #    self.navigation_graph.setData(self.test_x, self.test_y);
-
-
+        
+        
+#TODO: Add text highlighting for each type of log.
+class QLogsHighlighter(QSyntaxHighlighter):
+    def __init__(self, document):
+        super().__init__(document);
+        
+    def highlightBlock(self, text):
+        if "ERROR" in text:
+            fmt = QTextCharFormat()
+            fmt.setBackground(QColor("red"))
+            self.setFormat(0, len(text), fmt)       
+        else:
+            fmt = QTextCharFormat()
+            fmt.setBackground(QColor("yellow"))
+            self.setFormat(0, len(text), fmt)
+        
+ 
+#TODO: Make the log window shared in the main screen and in the log screen. Need dynamic synchronization.        
 class LogsWindow(QWidget):
     def __init__(self):
         super().__init__();
@@ -146,6 +163,8 @@ class LogsWindow(QWidget):
         logs_textbox.setReadOnly(True);
         logs_layout.addWidget(logs_textbox, 1, 0);
         
+        logs_highlighter = QLogsHighlighter(logs_textbox.document());
+        
         #TODO: Add widgets to a collection and enumerate to add widgets
         search_label = QLabel("Search: ");
         search_lineEdit = QLineEdit();
@@ -155,24 +174,6 @@ class LogsWindow(QWidget):
         logs_controls_layout.addWidget(filter_combobox);
         
         logs_textbox.appendPlainText("ERROR \n Test");
-        
-        
-#TODO: Figure out text highlighting.
-class QLogsHighlighter(QSyntaxHighlighter):
-    def __init__(self, document):
-        super().__init__(document);
-        
-    def highlightBlock(self, text):
-        if "ERROR" in text:
-            fmt = QTextCharFormat()
-            fmt.setBackground(QColor("red"))
-            self.setFormat(0, len(text), fmt)       
-        else:
-            fmt = QTextCharFormat()
-            fmt.setBackground(QColor("yellow"))
-            self.setFormat(0, len(text), fmt)
-        
-        
 
 
 class ComponentOverviewWindow(QWidget):
