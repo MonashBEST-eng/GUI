@@ -1,13 +1,14 @@
 from PyQt6.QtWidgets import (
-    QApplication, QMainWindow, QWidget, QLayout, 
+    QApplication, QMainWindow, QWidget, QLayout,
     QVBoxLayout, QHBoxLayout, QGridLayout, QFormLayout, QGroupBox,
     QLabel, QPlainTextEdit, QLineEdit, QProgressBar,
     QTableWidget, QTableWidgetItem, 
     QPushButton, QComboBox,
     QDialog, QMessageBox, );
 from PyQt6.QtCore import QTimer;
-from PyQt6.QtGui import QSyntaxHighlighter, QColor, QTextCharFormat;
+from PyQt6.QtGui import QSyntaxHighlighter, QColor, QTextCharFormat, QPalette, QColor, QImage, QPixmap;
 import pyqtgraph; #library responsible for all the plotting
+import cv2;
 
    
 
@@ -100,6 +101,7 @@ class NavigationWindow(QWidget):
         super().__init__();
         
         self.setWindowTitle("Navigation Diagnostics");
+        self.cameraWindow = None;
         
         #TODO: Get test 2D plotting working
         self.test_x = [0, 1, 2, 3, 4, 5, 6];
@@ -110,11 +112,15 @@ class NavigationWindow(QWidget):
         
         navigation_status_label = QLabel("Navigation Status: Halted");  
         
+        navigation_camera_button = QPushButton("Open Camera");
+        navigation_camera_button.pressed.connect(self.logs_window_open);
+        
         navigation_plot = pyqtgraph.PlotWidget();
         navigation_plot.setBackground("w");
         
         navigation_layout.addWidget(navigation_plot, 0, 0);
         navigation_layout.addWidget(navigation_status_label, 1, 0);
+        navigation_layout.addWidget(navigation_camera_button, 2, 0);
         
         self.navigation_graph = navigation_plot.plot(self.test_x, self.test_y, pen=pyqtgraph.mkPen(255,0,0));
         
@@ -122,15 +128,56 @@ class NavigationWindow(QWidget):
         #self.update_timer = QTimer();
         #self.update_timer.setInterval(600);
         #self.update_timer.timeout.connect(self.update_plot);
-        #self.update_timer.start();
-        
+        #self.update_timer.start();    
     
     #def update_plot(self):
     #    self.test_x.append(self.test_x.__len__() + 1);
     #    self.test_y.append(self.test_x.__len__() + 4);
     #    self.navigation_graph.setData(self.test_x, self.test_y);
+    
+    def logs_window_open(self):
+        #opens the navigation window if it already hasn't been opened
+        if self.cameraWindow is None:
+            self.cameraWindow = CameraWindow();
+        self.cameraWindow.show();
+        
+
+     
+class CameraWindow(QWidget):
+    def __init__(self):
+        super().__init__();
+        self.setWindowTitle("Test Camera");
+        
+        camera_layout = QGridLayout();
+        self.camera_label = QLabel();
+        self.setLayout(camera_layout);
+        camera_layout.addWidget(self.camera_label, 0, 0);
+        
+        self.cam = cv2.VideoCapture(0);
+        
+    def update_frame(self):
+        camera_captured, camera_frame = self.cam.read();
+        if not camera_captured:
+            return
+
+        #OpenCV uses BGR readings, PyQt can only read RGB
+        camera_frame = cv2.cvtColor(camera_frame, cv2.COLOR_BGR2RGB);
+
+        frame_height, frame_width, frame_channels = camera_frame.shape;
+        frame_bytesPerLine = frame_channels * frame_width;
+
+        qt_image = QImage(camera_frame, frame_width, frame_height, frame_bytesPerLine, QImage.Format_RGB888);
+        pixmap = QPixmap.fromImage(qt_image);
+
+        self.label.setPixmap(pixmap);
+
+    def closeEvent(self, event):
+        self.cam.release()
+        event.accept()
+
         
         
+
 #TODO: Add text highlighting for each type of log.
 class QLogsHighlighter(QSyntaxHighlighter):
     def __init__(self, document):
@@ -289,6 +336,14 @@ class CommunicationLinksDialog(QDialog):
         link_dialog_layout.addWidget(link_table);        
                 
 manager_application = QApplication([]);
+
+#Set Application-Wide Color Scheme
+manager_palette = manager_application.palette();
+manager_palette.setColor(QPalette.ColorRole.Window, QColor("#111827"));
+manager_palette.setColor(QPalette.ColorRole.Base, QColor("#0f172a"));
+manager_palette.setColor(QPalette.ColorRole.WindowText, QColor("white"));
+manager_application.setPalette(manager_palette);
+
 main_window = MainWindow();
 main_window.show();
 manager_application.exec();        
