@@ -1,5 +1,5 @@
 from PyQt6.QtWidgets import (
-    QApplication, QMainWindow, QWidget, QLayout,
+    QApplication, QMainWindow, QWidget, QLayout, QFrame,
     QVBoxLayout, QHBoxLayout, QGridLayout, QFormLayout, QGroupBox,
     QLabel, QPlainTextEdit, QLineEdit, QProgressBar,
     QTableWidget, QTableWidgetItem, 
@@ -12,21 +12,28 @@ import cv2;
 
    
 
+#TODO: Set card view
 #Contains the overview window
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__();
         
         self.setWindowTitle("TBM Manager");
-        
-        overview_layout = QGridLayout(); #overall grid pattern for all widgets to be organized in
-        
-        #stores if the navigation window has been opened, we don't want copies of the same window
+    
+        #stores if windows have been opened, we don't want copies of the same window
         self.navigation = None;
         self.logs = None; 
         self.componentOverview_window = None;
         
+        overview_layout = QGridLayout(); #overall grid pattern for all widgets to be organized in
+        
+        status_frame = QFrame(self);
+        status_frame.setFrameStyle(QFrame.Shape.Panel | QFrame.Shadow.Sunken);
+        status_layout = QVBoxLayout();
+        status_frame.setLayout(status_layout);
+        
         operation_status_label = QLabel(text="Status: Operationable");
+        status_layout.addWidget(operation_status_label);
         fire_interlock_label = QLabel(text="Fire Suppression: Ready");
         doors_interlock_label = QLabel(text="Doors: Closed");
         estop_interlock_label = QLabel(text="E-Stop: Ready");
@@ -57,7 +64,7 @@ class MainWindow(QMainWindow):
         overview_layout.addWidget(navigation_open_button, 2, 0);
         overview_layout.addWidget(componentOverview_open_button, 3, 0);
         overview_layout.addWidget(logs_open_button, 4, 0);
-        overview_layout.addWidget(operation_status_label, 0, 1);
+        overview_layout.addWidget(status_frame, 0, 1);
         overview_layout.addWidget(fire_interlock_label, 1, 1);
         overview_layout.addWidget(doors_interlock_label, 2, 1);
         overview_layout.addWidget(estop_interlock_label, 3, 1);
@@ -113,7 +120,7 @@ class NavigationWindow(QWidget):
         navigation_status_label = QLabel("Navigation Status: Halted");  
         
         navigation_camera_button = QPushButton("Open Camera");
-        navigation_camera_button.pressed.connect(self.logs_window_open);
+        navigation_camera_button.pressed.connect(self.camera_window_open);
         
         navigation_plot = pyqtgraph.PlotWidget();
         navigation_plot.setBackground("w");
@@ -135,10 +142,12 @@ class NavigationWindow(QWidget):
     #    self.test_y.append(self.test_x.__len__() + 4);
     #    self.navigation_graph.setData(self.test_x, self.test_y);
     
-    def logs_window_open(self):
+    def camera_window_open(self):
         #opens the navigation window if it already hasn't been opened
-        if self.cameraWindow is None:
-            self.cameraWindow = CameraWindow();
+        if self.cameraWindow is not None:
+            self.cameraWindow = None;
+            
+        self.cameraWindow = CameraWindow();
         self.cameraWindow.show();
         
 
@@ -155,6 +164,10 @@ class CameraWindow(QWidget):
         
         self.cam = cv2.VideoCapture(0);
         
+        self.cam_timer = QTimer();
+        self.cam_timer.timeout.connect(self.update_frame);
+        self.cam_timer.start(30);
+        
     def update_frame(self):
         camera_captured, camera_frame = self.cam.read();
         if not camera_captured:
@@ -166,14 +179,17 @@ class CameraWindow(QWidget):
         frame_height, frame_width, frame_channels = camera_frame.shape;
         frame_bytesPerLine = frame_channels * frame_width;
 
-        qt_image = QImage(camera_frame, frame_width, frame_height, frame_bytesPerLine, QImage.Format_RGB888);
+        qt_image = QImage(camera_frame, frame_width, frame_height, frame_bytesPerLine, QImage.Format.Format_RGB888);
         pixmap = QPixmap.fromImage(qt_image);
 
-        self.label.setPixmap(pixmap);
+        self.camera_label.setPixmap(pixmap);
 
     def closeEvent(self, event):
-        self.cam.release()
-        event.accept()
+        self.cam_timer.stop();
+        if self.cam is not None:
+            self.cam.release();
+        self.camera_label.clear();
+        event.accept();
 
         
         
@@ -343,6 +359,10 @@ manager_palette.setColor(QPalette.ColorRole.Window, QColor("#111827"));
 manager_palette.setColor(QPalette.ColorRole.Base, QColor("#0f172a"));
 manager_palette.setColor(QPalette.ColorRole.WindowText, QColor("white"));
 manager_application.setPalette(manager_palette);
+
+panel_palette = manager_application.palette();
+panel_palette.setColor(QPalette.ColorRole.Window, QColor("1f2937"));
+
 
 main_window = MainWindow();
 main_window.show();
