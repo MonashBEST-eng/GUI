@@ -13,7 +13,7 @@ from queue import Queue
 BROKER = "192.168.1.10"#"192.168.1.10"
 PORT = 1883
 
-# USE THIS IF NOT USING STM H7
+# USE THIS IF NOT USING STM H7        
 # BROKER = "localhost"
 # PORT = 1883
 
